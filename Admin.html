@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<title>Landscaping Admin Dashboard</title>
 
 <style>
 body{
     margin:0;
     font-family:Arial;
-    background:#f4f6f3;
+    background:#eef2ec;
 }
 
 /* LOGIN */
@@ -20,26 +20,26 @@ body{
     align-items:center;
 }
 
-.box{
+.login-box{
     width:320px;
-    padding:30px;
     background:white;
+    padding:30px;
     border-radius:12px;
-    box-shadow:0 5px 20px rgba(0,0,0,0.15);
+    box-shadow:0 10px 25px rgba(0,0,0,0.15);
 }
 
 input{
     width:100%;
     padding:12px;
     margin-top:10px;
-    border-radius:8px;
     border:1px solid #ccc;
+    border-radius:8px;
 }
 
 button{
     width:100%;
     padding:12px;
-    margin-top:15px;
+    margin-top:12px;
     border:none;
     border-radius:8px;
     background:#2e7d32;
@@ -47,66 +47,125 @@ button{
     cursor:pointer;
 }
 
-/* DASHBOARD */
-#dash{
+/* DASHBOARD LAYOUT */
+#dashboard{
     display:none;
 }
 
-header{
-    background:#2e7d32;
+.sidebar{
+    width:220px;
+    height:100vh;
+    background:#1b5e20;
     color:white;
-    padding:15px;
+    position:fixed;
+    padding:20px;
+}
+
+.sidebar h2{
+    font-size:18px;
+    margin-bottom:20px;
+}
+
+.sidebar p{
+    margin:10px 0;
+    cursor:pointer;
+    opacity:0.9;
+}
+
+.main{
+    margin-left:240px;
+    padding:20px;
+}
+
+.topbar{
     display:flex;
     justify-content:space-between;
     align-items:center;
-}
-
-.container{
-    max-width:900px;
-    margin:auto;
-    padding:20px;
+    margin-bottom:20px;
 }
 
 .card{
     background:white;
     padding:15px;
-    margin:10px 0;
+    margin-bottom:10px;
     border-radius:10px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.1);
 }
 
-.del{
+.delete{
     background:#c62828;
     margin-top:10px;
 }
+
+/* CALENDAR */
+.calendar{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:5px;
+    background:white;
+    padding:15px;
+    border-radius:10px;
+    margin-bottom:20px;
+}
+
+.day{
+    padding:10px;
+    text-align:center;
+    border:1px solid #ddd;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.day:hover{
+    background:#e8f5e9;
+}
+
+.active{
+    background:#2e7d32;
+    color:white;
+}
+
 </style>
 </head>
 <body>
 
 <!-- LOGIN -->
 <div id="login">
-    <div class="box">
+    <div class="login-box">
         <h2>Admin Login</h2>
 
         <input type="email" id="email" placeholder="Email">
         <input type="password" id="password" placeholder="Password">
 
         <button onclick="login()">Login</button>
-
-        <p id="err" style="color:red;"></p>
     </div>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dash">
+<div id="dashboard">
 
-<header>
-    <h2>Landscaping Admin</h2>
-    <button onclick="logout()">Sign Out</button>
-</header>
+<div class="sidebar">
+    <h2>🌿 Landscaping Admin</h2>
+    <p onclick="showAll()">All Appointments</p>
+    <p onclick="filterToday()">Today</p>
+    <p onclick="renderCalendar()">Calendar</p>
+    <p onclick="logout()">Logout</p>
+</div>
 
-<div class="container">
-    <h3>Total Requests: <span id="count">0</span></h3>
+<div class="main">
+
+    <div class="topbar">
+        <h2>Dashboard</h2>
+        <input type="text" placeholder="Search..." id="search" oninput="render()">
+    </div>
+
+    <!-- CALENDAR -->
+    <div id="calendar"></div>
+
+    <h3>Total: <span id="count">0</span></h3>
+
     <div id="list"></div>
+
 </div>
 
 </div>
@@ -114,7 +173,6 @@ header{
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-
 import {
     getFirestore,
     collection,
@@ -145,75 +203,129 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+let allData = [];
+let selectedDate = null;
+
 /* LOGIN */
 window.login = async function(){
-
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
     try{
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth,email,password);
     }catch(err){
-        document.getElementById("err").innerText = "Login failed";
+        alert("Login failed");
     }
 };
 
-/* LOGOUT */
 window.logout = function(){
     signOut(auth);
 };
 
-/* AUTH STATE */
-onAuthStateChanged(auth, user => {
-
+onAuthStateChanged(auth,user=>{
     if(user){
         document.getElementById("login").style.display="none";
-        document.getElementById("dash").style.display="block";
-        loadData();
-    } else {
+        document.getElementById("dashboard").style.display="block";
+        load();
+        renderCalendar();
+    }else{
         document.getElementById("login").style.display="flex";
-        document.getElementById("dash").style.display="none";
+        document.getElementById("dashboard").style.display="none";
     }
 });
 
 /* LOAD DATA */
-function loadData(){
+function load(){
+    const q = query(collection(db,"appointments"),orderBy("submitted","asc"));
 
-    const q = query(
-        collection(db,"appointments"),
-        orderBy("submitted","asc")
-    );
-
-    onSnapshot(q,(snap)=>{
-
-        const list = document.getElementById("list");
-        list.innerHTML = "";
-
-        document.getElementById("count").innerText = snap.size;
+    onSnapshot(q,snap=>{
+        allData = [];
 
         snap.forEach(d=>{
-
-            const data = d.data();
-
-            list.innerHTML += `
-            <div class="card">
-                <h3>${data.name}</h3>
-                <p>${data.email}</p>
-                <p>${data.address}</p>
-                <p>${data.date} @ ${data.time}</p>
-
-                <button class="del" onclick="remove('${d.id}')">
-                    Delete (Completed)
-                </button>
-            </div>
-            `;
+            allData.push({id:d.id,...d.data()});
         });
 
+        render();
     });
 }
 
+/* RENDER LIST */
+window.render = function(){
+
+    const search = document.getElementById("search").value.toLowerCase();
+
+    let filtered = allData.filter(a =>
+        a.name.toLowerCase().includes(search)
+    );
+
+    if(selectedDate){
+        filtered = filtered.filter(a => a.date === selectedDate);
+    }
+
+    document.getElementById("count").innerText = filtered.length;
+
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+
+    filtered.forEach(a=>{
+        list.innerHTML += `
+        <div class="card">
+            <h3>${a.name}</h3>
+            <p>${a.email}</p>
+            <p>${a.address}</p>
+            <p>${a.date} @ ${a.time}</p>
+
+            <button class="delete" onclick="remove('${a.id}')">
+                Delete (Completed)
+            </button>
+        </div>`;
+    });
+};
+
+/* DELETE */
 window.remove = async function(id){
     await deleteDoc(doc(db,"appointments",id));
+};
+
+/* CALENDAR */
+window.renderCalendar = function(){
+
+    const cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth();
+
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    for(let i=1;i<=daysInMonth;i++){
+
+        const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+
+        const div = document.createElement("div");
+        div.className = "day";
+        div.innerText = i;
+
+        div.onclick = ()=>{
+            selectedDate = dateStr;
+            render();
+        };
+
+        cal.appendChild(div);
+    }
+};
+
+/* QUICK FILTERS */
+window.showAll = function(){
+    selectedDate = null;
+    render();
+};
+
+window.filterToday = function(){
+    const t = new Date().toISOString().split("T")[0];
+    selectedDate = t;
+    render();
 };
 
 </script>
