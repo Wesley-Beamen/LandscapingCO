@@ -1,3 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Landscaping Company</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:#f5f7f2;
+    color:#333;
+}
+
+/* NAV */
+nav{
+    background:white;
+    padding:15px 25px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    position:sticky;
+    top:0;
+}
+
+nav .logo{
+    font-weight:bold;
+    color:#2e7d32;
+    font-size:1.4rem;
+}
+
+nav a{
+    margin-left:15px;
+    text-decoration:none;
+    color:#333;
+}
+
+nav a:hover{
+    color:#2e7d32;
+}
+
+/* HERO */
+.hero{
+    height:90vh;
+    background:
+    linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)),
+    url("images/hero.jpg");
+    background-size:cover;
+    background-position:center;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    text-align:center;
+    color:white;
+    padding:20px;
+}
+
+.hero h1{
+    font-size:3rem;
+    margin-bottom:15px;
+}
+
+.hero p{
+    font-size:1.2rem;
+    margin-bottom:20px;
+}
+
+.btn{
+    background:#43a047;
+    color:white;
+    padding:12px 25px;
+    border-radius:8px;
+    text-decoration:none;
+}
+
+/* SERVICES */
+section{
+    padding:70px 20px;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+}
+
+.title{
+    text-align:center;
+    margin-bottom:40px;
+    color:#2e7d32;
+}
+
+.services{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+}
+
+.card{
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+}
+
+.card img{
+    width:100%;
+    height:200px;
+    object-fit:cover;
+}
+
+.card-content{
+    padding:15px;
+}
+
+/* FORM */
+.form-box{
+    background:white;
+    padding:25px;
+    border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    max-width:600px;
+    margin:auto;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border:1px solid #ccc;
+    border-radius:8px;
+}
+
+button{
+    width:100%;
+    margin-top:15px;
+    padding:12px;
+    background:#2e7d32;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1b5e20;
+}
+
+#status{
+    text-align:center;
+    margin-top:10px;
+    font-weight:bold;
+}
+
+/* FOOTER */
+footer{
+    text-align:center;
+    padding:20px;
+    background:#1b5e20;
+    color:white;
+}
+</style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">Landscaping Company</div>
+    <div>
+        <a href="#services">Services</a>
+        <a href="#book">Book</a>
+    </div>
+</nav>
+
+<div class="hero">
+    <div>
+        <h1>Professional Landscaping Services</h1>
+        <p>Reliable lawn care, cleanup, and outdoor transformations</p>
+        <a class="btn" href="#book">Book Appointment</a>
+    </div>
+</div>
+
+<section id="services">
+    <div class="container">
+        <h2 class="title">Our Services</h2>
+
+        <div class="services">
+
+            <div class="card">
+                <img src="images/mowing.jpg">
+                <div class="card-content">
+                    <h3>Lawn Mowing</h3>
+                    <p>Clean, professional lawn cutting and edging.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="images/mulch.jpg">
+                <div class="card-content">
+                    <h3>Mulching</h3>
+                    <p>Fresh mulch installation for healthy landscapes.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <img src="images/cleanup.jpg">
+                <div class="card-content">
+                    <h3>Yard Cleanup</h3>
+                    <p>Seasonal cleanup and debris removal.</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<section id="book">
+    <div class="container">
+        <h2 class="title">Book Appointment</h2>
+
+        <div class="form-box">
+            <form id="appointmentForm">
+
+                <input type="text" id="name" placeholder="Full Name" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="text" id="address" placeholder="Address" required>
+
+                <input type="date" id="date" required>
+                <input type="time" id="time" required>
+
+                <button type="submit">Submit</button>
+            </form>
+
+            <p id="status"></p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    © 2026 Landscaping Company
+</footer>
+
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -21,51 +268,42 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 const form = document.getElementById("appointmentForm");
+const status = document.getElementById("status");
 
-/* -------------------------
-   EMAIL VALIDATION
--------------------------*/
-function isValidEmail(email){
+/* EMAIL CHECK */
+function validEmail(email){
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* -------------------------
-   DATE / TIME VALIDATION
--------------------------*/
-function validateDateTime(dateStr, timeStr){
+/* DATE/TIME CHECK */
+function validate(dateStr, timeStr){
 
     const now = new Date();
+    const selected = new Date(dateStr + "T" + timeStr);
 
-    const date = new Date(dateStr + "T" + timeStr);
-
-    // 1. Past check
-    if(date < now){
-        return "You cannot select a past date/time.";
+    // past check
+    if(selected < now){
+        return "Cannot book past dates.";
     }
 
-    // 2. 2 years future limit
-    const maxFuture = new Date();
-    maxFuture.setFullYear(maxFuture.getFullYear() + 2);
+    // 2 year limit
+    const max = new Date();
+    max.setFullYear(max.getFullYear() + 2);
 
-    if(date > maxFuture){
-        return "You cannot book more than 2 years in advance.";
+    if(selected > max){
+        return "Cannot book more than 2 years ahead.";
     }
 
-    // 3. Time restrictions (6AM - 8PM)
+    // business hours
     const hour = parseInt(timeStr.split(":")[0]);
-
     if(hour < 6 || hour >= 20){
-        return "Appointments must be between 6:00 AM and 8:00 PM.";
+        return "Bookings allowed only 6AM - 8PM.";
     }
 
     return null;
 }
 
-/* -------------------------
-   SUBMIT HANDLER
--------------------------*/
 form.addEventListener("submit", async (e)=>{
-
     e.preventDefault();
 
     const name = document.getElementById("name").value.trim();
@@ -74,18 +312,13 @@ form.addEventListener("submit", async (e)=>{
     const date = document.getElementById("date").value;
     const time = document.getElementById("time").value;
 
-    const status = document.getElementById("status");
-
-    // EMAIL CHECK
-    if(!isValidEmail(email)){
+    if(!validEmail(email)){
         status.innerText = "Invalid email format.";
         status.style.color = "red";
         return;
     }
 
-    // DATE/TIME CHECK
-    const error = validateDateTime(date, time);
-
+    const error = validate(date, time);
     if(error){
         status.innerText = error;
         status.style.color = "red";
@@ -93,7 +326,6 @@ form.addEventListener("submit", async (e)=>{
     }
 
     try{
-
         await addDoc(collection(db,"appointments"),{
             name,
             email,
@@ -103,17 +335,19 @@ form.addEventListener("submit", async (e)=>{
             submitted: serverTimestamp()
         });
 
-        status.innerText = "Appointment submitted successfully!";
+        status.innerText = "Appointment submitted!";
         status.style.color = "green";
-
         form.reset();
 
     }catch(err){
         console.error(err);
-        status.innerText = "Error submitting request.";
+        status.innerText = "Error submitting form.";
         status.style.color = "red";
     }
 
 });
 
 </script>
+
+</body>
+</html>
