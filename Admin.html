@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appointments Dashboard</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin:15px auto;
+    max-width:700px;
+    border-radius:10px;
+    box-shadow:0 0 10px rgba(0,0,0,.15);
+}
+
+</style>
+</head>
+<body>
+
+<h1>Appointment Requests</h1>
+
+<div id="appointments"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCCmgHZXEX3-6RT7bqEfQytHbfpxD7GMTM",
+  authDomain: "landscapingform.firebaseapp.com",
+  projectId: "landscapingform",
+  storageBucket: "landscapingform.firebasestorage.app",
+  messagingSenderId: "233664675176",
+  appId: "1:233664675176:web:493b8ce3153acc9dd1eadd",
+  measurementId: "G-D32MNW7YWE"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const container = document.getElementById("appointments");
+
+onSnapshot(collection(db,"appointments"), (snapshot)=>{
+
+    container.innerHTML = "";
+
+    snapshot.forEach((doc)=>{
+
+        const data = doc.data();
+
+        container.innerHTML += `
+        <div class="card">
+            <h2>${data.name}</h2>
+            <p><strong>Email:</strong> ${data.email}</p>
+            <p><strong>Address:</strong> ${data.address}</p>
+            <p><strong>Date:</strong> ${data.date}</p>
+            <p><strong>Time:</strong> ${data.time}</p>
+        </div>
+        `;
+
+    });
+
+});
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Appointment Request</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#f4f4f4;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+}
+
+.container{
+    background:white;
+    padding:30px;
+    width:400px;
+    border-radius:12px;
+    box-shadow:0 0 15px rgba(0,0,0,.15);
+}
+
+h1{
+    text-align:center;
+}
+
+input{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    box-sizing:border-box;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    margin-top:15px;
+    border:none;
+    background:#28a745;
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    border-radius:5px;
+}
+
+button:hover{
+    background:#218838;
+}
+
+#status{
+    text-align:center;
+    margin-top:15px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Book Appointment</h1>
+
+    <form id="appointmentForm">
+
+        <input type="text" id="name" placeholder="Full Name" required>
+
+        <input type="email" id="email" placeholder="Email" required>
+
+        <input type="text" id="address" placeholder="Address" required>
+
+        <input type="date" id="date" required>
+
+        <input type="time" id="time" required>
+
+        <button type="submit">Submit Request</button>
+
+    </form>
+
+    <p id="status"></p>
+</div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+
+import {
+    getFirestore,
+    collection,
+    addDoc
+}
+from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCCmgHZXEX3-6RT7bqEfQytHbfpxD7GMTM",
+  authDomain: "landscapingform.firebaseapp.com",
+  projectId: "landscapingform",
+  storageBucket: "landscapingform.firebasestorage.app",
+  messagingSenderId: "233664675176",
+  appId: "1:233664675176:web:493b8ce3153acc9dd1eadd",
+  measurementId: "G-D32MNW7YWE"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const form = document.getElementById("appointmentForm");
+
+form.addEventListener("submit", async (e)=>{
+
+    e.preventDefault();
+
+    const data = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        address: document.getElementById("address").value,
+        date: document.getElementById("date").value,
+        time: document.getElementById("time").value,
+        submitted: new Date().toISOString()
+    };
+
+    try{
+
+        await addDoc(collection(db,"appointments"),data);
+
+        document.getElementById("status").innerText =
+            "Appointment submitted successfully!";
+
+        form.reset();
+
+    }catch(error){
+
+        console.error(error);
+
+        document.getElementById("status").innerText =
+            "Error submitting request.";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
