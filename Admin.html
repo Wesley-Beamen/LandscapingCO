@@ -1,210 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Landscaping Admin Dashboard</title>
-
-<style>
-body{
-    margin:0;
-    font-family:Arial;
-    background:#f3f5f2;
-    color:#222;
-}
-
-/* LOGIN */
-#login{
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-}
-
-.login-box{
-    width:320px;
-    background:white;
-    padding:30px;
-    border-radius:12px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.15);
-}
-
-input{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border:1px solid #ccc;
-    border-radius:8px;
-}
-
-button{
-    width:100%;
-    padding:12px;
-    margin-top:10px;
-    border:none;
-    border-radius:8px;
-    background:#2e7d32;
-    color:white;
-    cursor:pointer;
-}
-
-/* DASHBOARD */
-#dashboard{
-    display:none;
-}
-
-.header{
-    background:#1b5e20;
-    color:white;
-    padding:15px 20px;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-}
-
-.container{
-    display:grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap:20px;
-    padding:20px;
-}
-
-/* CALENDAR */
-.panel{
-    background:white;
-    border-radius:12px;
-    padding:15px;
-    box-shadow:0 2px 10px rgba(0,0,0,0.08);
-}
-
-.calendar-title{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:10px;
-    font-weight:bold;
-    color:#2e7d32;
-}
-
-.month-block{
-    margin-bottom:20px;
-}
-
-.month-name{
-    font-weight:bold;
-    margin:10px 0;
-    color:#444;
-}
-
-.grid{
-    display:grid;
-    grid-template-columns:repeat(7,1fr);
-    gap:5px;
-}
-
-.day{
-    background:#f8f8f8;
-    border:1px solid #ddd;
-    padding:10px;
-    text-align:center;
-    border-radius:6px;
-    cursor:pointer;
-    font-size:13px;
-}
-
-.day:hover{
-    background:#e8f5e9;
-}
-
-.selected{
-    background:#2e7d32;
-    color:white;
-}
-
-/* LIST */
-.card{
-    background:#fff;
-    padding:12px;
-    margin-bottom:10px;
-    border-radius:10px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08);
-}
-
-.card h3{
-    margin:0;
-    color:#2e7d32;
-}
-
-.delete{
-    background:#c62828;
-    margin-top:8px;
-}
-
-/* TOP CONTROLS */
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:15px;
-}
-
-.small-btn{
-    width:auto;
-    padding:8px 12px;
-    margin-left:5px;
-}
-</style>
-</head>
-<body>
-
-<!-- LOGIN -->
-<div id="login">
-    <div class="login-box">
-        <h2>Admin Login</h2>
-        <input type="email" id="email" placeholder="Email">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Login</button>
-    </div>
-</div>
-
-<!-- DASHBOARD -->
-<div id="dashboard">
-
-<div class="header">
-    <h2>🌿 Landscaping Dashboard</h2>
-    <button onclick="logout()" class="small-btn">Logout</button>
-</div>
-
-<div class="container">
-
-    <!-- CALENDAR -->
-    <div class="panel">
-        <div class="calendar-title">
-            <span>Calendar</span>
-            <div>
-                <button class="small-btn" onclick="clearFilter()">Clear</button>
-                <button class="small-btn" onclick="today()">Today</button>
-            </div>
-        </div>
-
-        <div id="calendar"></div>
-    </div>
-
-    <!-- LIST -->
-    <div class="panel">
-
-        <div class="topbar">
-            <h3>Appointments (<span id="count">0</span>)</h3>
-        </div>
-
-        <div id="list"></div>
-
-    </div>
-
-</div>
-
-</div>
-
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
@@ -241,7 +34,7 @@ const auth = getAuth(app);
 let all = [];
 let selectedDate = null;
 
-/* LOGIN */
+/* ---------------- LOGIN ---------------- */
 window.login = async function(){
     const email = document.getElementById("email").value;
     const pass = document.getElementById("password").value;
@@ -258,14 +51,13 @@ onAuthStateChanged(auth,user=>{
         document.getElementById("login").style.display="none";
         document.getElementById("dashboard").style.display="block";
         load();
-        renderCalendar();
     }else{
         document.getElementById("login").style.display="flex";
         document.getElementById("dashboard").style.display="none";
     }
 });
 
-/* LOAD DATA */
+/* ---------------- LOAD DATA ---------------- */
 function load(){
     const q = query(collection(db,"appointments"),orderBy("submitted","asc"));
 
@@ -276,18 +68,90 @@ function load(){
             all.push({id:d.id,...d.data()});
         });
 
-        render();
+        renderCalendar();
+        renderList();
     });
 }
 
-/* RENDER LIST */
-function render(){
+/* ---------------- GROUP BY DATE ---------------- */
+function getCounts(){
+    const counts = {};
 
-    let data = all;
+    all.forEach(a=>{
+        if(!counts[a.date]) counts[a.date] = 0;
+        counts[a.date]++;
+    });
 
-    if(selectedDate){
-        data = data.filter(a => a.date === selectedDate);
+    return counts;
+}
+
+/* ---------------- CALENDAR ---------------- */
+window.renderCalendar = function(){
+
+    const cal = document.getElementById("calendar");
+    cal.innerHTML = "";
+
+    const counts = getCounts();
+    const now = new Date();
+
+    for(let m=0;m<2;m++){
+
+        const monthDate = new Date(now.getFullYear(), now.getMonth()+m, 1);
+
+        const monthName = monthDate.toLocaleString('default',{month:'long'});
+        const year = monthDate.getFullYear();
+        const month = monthDate.getMonth();
+
+        const days = new Date(year, month+1, 0).getDate();
+
+        let html = `
+        <div class="month-block">
+        <div class="month-name">${monthName} ${year}</div>
+        <div class="grid">`;
+
+        for(let i=1;i<=days;i++){
+
+            const dateStr =
+                `${year}-${String(month+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+
+            const count = counts[dateStr] || 0;
+
+            html += `
+            <div class="day ${selectedDate===dateStr?'selected':''}"
+            onclick="selectDate('${dateStr}')"
+            style="position:relative">
+
+                ${i}
+
+                ${count > 0 ? `
+                <div style="
+                    position:absolute;
+                    top:2px;
+                    right:2px;
+                    background:red;
+                    color:white;
+                    border-radius:50%;
+                    width:18px;
+                    height:18px;
+                    font-size:11px;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;">
+                    ${count}
+                </div>` : ""}
+            </div>`;
+        }
+
+        html += "</div></div>";
+
+        cal.innerHTML += html;
     }
+};
+
+/* ---------------- LIST (ALL APPOINTMENTS) ---------------- */
+window.renderList = function(){
+
+    let data = [...all];
 
     document.getElementById("count").innerText = data.length;
 
@@ -307,68 +171,28 @@ function render(){
             </button>
         </div>`;
     });
-}
+};
 
+/* ---------------- DELETE ---------------- */
 window.remove = async function(id){
     await deleteDoc(doc(db,"appointments",id));
 };
 
-/* CALENDAR (CURRENT + NEXT MONTH) */
-window.renderCalendar = function(){
-
-    const cal = document.getElementById("calendar");
-    cal.innerHTML = "";
-
-    const now = new Date();
-
-    for(let m=0;m<2;m++){
-
-        const date = new Date(now.getFullYear(), now.getMonth()+m, 1);
-
-        const monthName = date.toLocaleString('default',{month:'long'});
-
-        const days = new Date(date.getFullYear(), date.getMonth()+1,0).getDate();
-
-        let html = `<div class="month-block">
-        <div class="month-name">${monthName}</div>
-        <div class="grid">`;
-
-        for(let i=1;i<=days;i++){
-
-            const dateStr = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
-
-            html += `
-            <div class="day ${selectedDate===dateStr?'selected':''}"
-            onclick="selectDate('${dateStr}')">
-                ${i}
-            </div>`;
-        }
-
-        html += "</div></div>";
-
-        cal.innerHTML += html;
-    }
-};
-
+/* ---------------- CALENDAR CLICK ---------------- */
 window.selectDate = function(date){
     selectedDate = date;
     renderCalendar();
-    render();
 };
 
+/* ---------------- CLEAR FILTER ---------------- */
 window.clearFilter = function(){
     selectedDate = null;
     renderCalendar();
-    render();
 };
 
 window.today = function(){
     selectedDate = new Date().toISOString().split("T")[0];
     renderCalendar();
-    render();
 };
 
 </script>
-
-</body>
-</html>
